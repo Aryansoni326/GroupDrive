@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "GroupDrive",
+    "slug": "groupdrive-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "groupdrive",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "in.groupdrive.mobile"
+    },
+    "android": {
+      "package": "in.groupdrive.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "groupdrive-customer-app"
+      }
+    }
+  }
+}
+
