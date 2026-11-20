@@ -48,7 +48,7 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    groupTitle: "Sales & Customers",
+    groupTitle: "Dealership Operations",
     items: [
       {
         label: "Dashboard Overview",
@@ -56,73 +56,51 @@ const NAV_GROUPS: NavGroup[] = [
         icon: LayoutDashboard,
       },
       {
-        label: "Customer Leads",
+        label: "Active Customers & Leads",
         href: "/leads",
         icon: UserCheck,
         badge: "7 Active",
       },
       {
-        label: "Follow-ups & Visits",
+        label: "Follow-ups & Staff Tasks",
         href: "/follow-ups",
         icon: CalendarCheck,
         badge: "3 Due",
         badgeVariant: "warning",
       },
       {
-        label: "Quotations & Pricing",
-        href: "/quotations",
-        icon: FileSpreadsheet,
-      },
-    ],
-  },
-  {
-    groupTitle: "Inventory & Demand",
-    items: [
-      {
-        label: "Buyer Demand Radar",
-        href: "/demand",
-        icon: Radio,
-        badge: "4 Groups",
-        badgeVariant: "warning",
-      },
-      {
-        label: "Yard Inventory",
+        label: "Showroom Inventory",
         href: "/inventory",
         icon: Warehouse,
-        badge: "5 Units",
+        badge: "Live Stock",
       },
       {
-        label: "Special Campaigns",
+        label: "Deal Groups & Offers",
         href: "/campaigns",
         icon: Tag,
       },
+      {
+        label: "Demand & Sales Analytics",
+        href: "/demand",
+        icon: Radio,
+      },
     ],
   },
   {
-    groupTitle: "Operations & Admin",
+    groupTitle: "Dealer Management",
     items: [
-      {
-        label: "Reports & Analytics",
-        href: "/reports",
-        icon: BarChart3,
-      },
-      {
-        label: "Notification Center",
-        href: "/notifications",
-        icon: Bell,
-      },
       {
         label: "Showroom Branches",
         href: "/branches",
         icon: Building,
       },
       {
-        label: "Staff Management",
+        label: "Staff & Task Assignment",
         href: "/staff",
         icon: Users,
       },
       {
-        label: "Dealership Settings",
+        label: "Dealer Profile & Settings",
         href: "/settings",
         icon: Settings,
       },
@@ -146,16 +124,16 @@ export function Sidebar({
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
         {/* Brand Header */}
         <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
-          <Link href="/dashboard" className="flex items-center space-x-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-md">
-              <Car className="h-5 w-5" />
+          <Link href="/dashboard" className="flex items-center space-x-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-black text-lg shadow-sm">
+              GD
             </div>
             {!isCollapsed && (
               <div>
-                <span className="font-bold text-base tracking-tight text-white block leading-none">
-                  GROUPDRIVE
+                <span className="font-black text-base tracking-tight text-white block leading-none">
+                  GROUP<span className="text-blue-400">DRIVE</span>
                 </span>
-                <span className="text-xs font-semibold text-emerald-400 tracking-wider block mt-1">
+                <span className="text-[10px] font-bold text-blue-400 tracking-wider block mt-1 uppercase">
                   DealerOS
                 </span>
               </div>

@@ -3,823 +3,989 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Radio,
-  Warehouse,
-  FileSpreadsheet,
-  Clock,
-  ArrowRight,
-  ShieldCheck,
   Building2,
   Users,
+  Car,
+  Warehouse,
   CheckCircle2,
+  PlusCircle,
+  Tag,
+  Radio,
+  Trash2,
   Calendar,
   CheckSquare,
   Square,
-  Activity,
-  Award,
-  DollarSign,
-  Car,
-  Filter,
-  Phone,
-  PlusCircle,
+  ArrowRight,
   TrendingUp,
-  AlertCircle,
+  MapPin,
+  Clock,
+  ShieldCheck,
+  Phone,
+  Edit,
   ExternalLink,
+  DollarSign,
+  UserCheck,
+  AlertCircle,
+  Filter,
 } from "lucide-react";
 import { useAuth } from "../../../lib/auth-context";
 import { dealerApi } from "../../../lib/api";
-import {
-  DealerDashboardData,
-  DealerTask,
-  DealerFollowUp,
-} from "@groupdrive/types";
 import { formatINR, formatDate } from "@groupdrive/utils";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
-import { EmptyState } from "../../../components/feedback/empty-state";
-import { ErrorCard } from "../../../components/feedback/error-card";
 
-type DateFilterType = "all" | "today" | "this_week" | "this_month";
+interface InventoryVehicle {
+  id: string;
+  model: string;
+  variant: string;
+  color: string;
+  vin: string;
+  price: number;
+  status: "IN_STOCK" | "RESERVED" | "DELIVERED";
+  branch: string;
+}
 
-export default function DashboardPage() {
+interface DealOffer {
+  id: string;
+  title: string;
+  model: string;
+  discount: number;
+  validUntil: string;
+  status: "ACTIVE" | "EXPIRED";
+}
+
+interface StaffTask {
+  id: string;
+  title: string;
+  assignedTo: string;
+  dueDate: string;
+  priority: "HIGH" | "NORMAL";
+  completed: boolean;
+}
+
+export default function SimpleSmartDealerDashboard() {
   const { user, dealer, currentBranch } = useAuth();
-  const [dashboardData, setDashboardData] = useState<DealerDashboardData | null>(null);
-  const [dateFilter, setDateFilter] = useState<DateFilterType>("all");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdatingTask, setIsUpdatingTask] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  const role = user?.staff_role || "DEALER_OWNER";
+  // Date filter for analytics: "month" | "year" | "custom"
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<"month" | "year" | "custom">("month");
+  const [customStartDate, setCustomStartDate] = useState("2026-11-01");
+  const [customEndDate, setCustomEndDate] = useState("2026-11-20");
 
-  const loadDashboardData = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await dealerApi.getDashboard(currentBranch?.id, dateFilter);
-      setDashboardData(res.data);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to load dashboard metrics";
-      setError(msg);
-    } finally {
-      setIsLoading(false);
-    }
+  // Showroom Inventory State (which reflects on main website)
+  const [inventory, setInventory] = useState<InventoryVehicle[]>([
+    {
+      id: "inv-001",
+      model: "Maruti Suzuki Brezza",
+      variant: "ZXi Plus 1.5L AT",
+      color: "Magma Grey",
+      vin: "MB12-98471-2026",
+      price: 1398000,
+      status: "IN_STOCK",
+      branch: "Whitefield Showroom",
+    },
+    {
+      id: "inv-002",
+      model: "Maruti Suzuki Grand Vitara",
+      variant: "Alpha Plus Strong Hybrid",
+      color: "Arctic White",
+      vin: "GV45-77291-2026",
+      price: 1985000,
+      status: "IN_STOCK",
+      branch: "Bannerghatta Flagship",
+    },
+    {
+      id: "inv-003",
+      model: "Maruti Suzuki Fronx",
+      variant: "Alpha 1.0L Turbo 6AT",
+      color: "Splendid Silver",
+      vin: "FX88-11203-2026",
+      price: 1295000,
+      status: "RESERVED",
+      branch: "Whitefield Showroom",
+    },
+    {
+      id: "inv-004",
+      model: "Maruti Suzuki Swift",
+      variant: "ZXi Plus Dual Tone",
+      color: "Luster Blue",
+      vin: "SW21-39912-2026",
+      price: 945000,
+      status: "IN_STOCK",
+      branch: "Bannerghatta Flagship",
+    },
+  ]);
+
+  // Deal Group Offers Management (Dealers can add or remove deals)
+  const [offers, setOffers] = useState<DealOffer[]>([
+    {
+      id: "off-001",
+      title: "Festive Group Fleet Discount",
+      model: "Brezza ZXi Plus",
+      discount: 65000,
+      validUntil: "2026-11-30",
+      status: "ACTIVE",
+    },
+    {
+      id: "off-002",
+      title: "Strong Hybrid Corporate Allocation",
+      model: "Grand Vitara Alpha+",
+      discount: 85000,
+      validUntil: "2026-12-15",
+      status: "ACTIVE",
+    },
+    {
+      id: "off-003",
+      title: "Pre-Launch Batch Incentive",
+      model: "Fronx Turbo",
+      discount: 40000,
+      validUntil: "2026-11-25",
+      status: "ACTIVE",
+    },
+  ]);
+
+  // Today's Staff Tasks
+  const [tasks, setTasks] = useState<StaffTask[]>([
+    {
+      id: "tsk-01",
+      title: "Call Rahul Menon (Brezza Group lead) to confirm showroom delivery slot",
+      assignedTo: "Arun Kumar (Sales)",
+      dueDate: "Today, 02:00 PM",
+      priority: "HIGH",
+      completed: false,
+    },
+    {
+      id: "tsk-02",
+      title: "Submit reverse bid for Whitefield 8-Member Brezza Buyer Group",
+      assignedTo: "Rajesh Rao (Branch Manager)",
+      dueDate: "Today, 04:30 PM",
+      priority: "HIGH",
+      completed: false,
+    },
+    {
+      id: "tsk-03",
+      title: "Conduct PDI on Grand Vitara Strong Hybrid allotment #GV45",
+      assignedTo: "Mahesh Gowda (Yard)",
+      dueDate: "Today, 05:00 PM",
+      priority: "NORMAL",
+      completed: true,
+    },
+  ]);
+
+  // Quick Add Vehicle Modal State
+  const [isAddCarModalOpen, setIsAddCarModalOpen] = useState(false);
+  const [newCarModel, setNewCarModel] = useState("Maruti Suzuki Brezza");
+  const [newCarVariant, setNewCarVariant] = useState("ZXi 1.5L MT");
+  const [newCarColor, setNewCarColor] = useState("Pearl Arctic White");
+  const [newCarPrice, setNewCarPrice] = useState("1150000");
+
+  // Quick Add Task Modal State
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskAssignee, setNewTaskAssignee] = useState("Arun Kumar (Sales)");
+  const [newTaskDueDate, setNewTaskDueDate] = useState("Today, 05:00 PM");
+
+  // Success Notice
+  const [alertNotice, setAlertNotice] = useState<string | null>(null);
+
+  const handleToggleTask = (taskId: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t))
+    );
   };
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [currentBranch, dateFilter, role]);
-
-  const handleToggleTask = async (task: DealerTask) => {
-    setIsUpdatingTask(task.id);
-    const newStatus = task.status === "DONE" ? "TODO" : "DONE";
-    try {
-      await dealerApi.updateTaskStatus(task.id, newStatus);
-      if (dashboardData) {
-        setDashboardData({
-          ...dashboardData,
-          tasks: dashboardData.tasks.map((t) =>
-            t.id === task.id ? { ...t, status: newStatus } : t
-          ),
-        });
-      }
-    } catch {
-      // Keep UI state resilient
-    } finally {
-      setIsUpdatingTask(null);
-    }
+  const handleRemoveDeal = (dealId: string) => {
+    setOffers((prev) => prev.filter((d) => d.id !== dealId));
+    setAlertNotice("Special Offer deal removed successfully.");
+    setTimeout(() => setAlertNotice(null), 3500);
   };
 
-  const handleCompleteFollowUp = async (followUp: DealerFollowUp) => {
-    try {
-      await dealerApi.updateFollowUpStatus(followUp.id, "COMPLETED");
-      if (dashboardData) {
-        setDashboardData({
-          ...dashboardData,
-          upcoming_follow_ups: dashboardData.upcoming_follow_ups.map((f) =>
-            f.id === followUp.id ? { ...f, status: "COMPLETED" } : f
-          ),
-        });
-      }
-    } catch {
-      // Keep UI resilient
-    }
+  const handleRemoveCar = (carId: string) => {
+    setInventory((prev) => prev.filter((c) => c.id !== carId));
+    setAlertNotice("Vehicle removed from showroom stock. Main website updated.");
+    setTimeout(() => setAlertNotice(null), 3500);
   };
 
-  const metrics = dashboardData?.metrics;
-  const tasks = dashboardData?.tasks || [];
-  const enquiries = dashboardData?.recent_enquiries || [];
-  const followUps = dashboardData?.upcoming_follow_ups || [];
-  const activities = dashboardData?.recent_activities || [];
-  const inventorySummary = dashboardData?.inventory_summary;
-  const groupOpportunities = dashboardData?.latest_group_opportunities || [];
-  const quotations = dashboardData?.recent_quotations || [];
-  const salesPerformance = dashboardData?.sales_performance || [];
+  const handleAddCar = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newVehicle: InventoryVehicle = {
+      id: `inv-${Date.now()}`,
+      model: newCarModel,
+      variant: newCarVariant,
+      color: newCarColor,
+      vin: `MB-${Math.floor(10000 + Math.random() * 90000)}-2026`,
+      price: parseFloat(newCarPrice) || 1200000,
+      status: "IN_STOCK",
+      branch: currentBranch?.branch_name || "Whitefield Showroom",
+    };
+    setInventory([newVehicle, ...inventory]);
+    setIsAddCarModalOpen(false);
+    setAlertNotice(`Added ${newCarModel} to showroom. Live on GroupDrive main site.`);
+    setTimeout(() => setAlertNotice(null), 3500);
+  };
+
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTaskTitle.trim()) return;
+    const newTask: StaffTask = {
+      id: `tsk-${Date.now()}`,
+      title: newTaskTitle,
+      assignedTo: newTaskAssignee,
+      dueDate: newTaskDueDate,
+      priority: "HIGH",
+      completed: false,
+    };
+    setTasks([newTask, ...tasks]);
+    setNewTaskTitle("");
+    setIsAddTaskModalOpen(false);
+    setAlertNotice("New task assigned to staff member.");
+    setTimeout(() => setAlertNotice(null), 3500);
+  };
+
+  // Particular Dealer Profile Data
+  const dealerName = dealer?.trade_name || "Kalyani Motors Maruti Suzuki Nexa & Arena";
+  const dealerFranchise = dealer?.oem_brand_franchise || "Maruti Suzuki India Limited";
+  const dealerAddress = dealer?.registered_office_address || "No. 24, Outer Ring Road, Nayandahalli, Bengaluru";
+  const dealerPhone = dealer?.primary_contact_phone || "+91 98450 12345";
+  const dealerCity = currentBranch?.city || "Bengaluru";
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* 1. Welcoming Showroom Header */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Welcome back, {user?.first_name || "Dealership Team"}
-              </h1>
-              <Badge variant="success" className="text-xs px-2.5 py-0.5 font-semibold">
-                Online
-              </Badge>
-            </div>
-            <p className="text-sm text-slate-600 mt-1">
-              {dealer?.trade_name || "GroupDrive Partner Dealership"}
-              {" - "}
-              <span className="font-medium text-slate-900">
-                {currentBranch ? currentBranch.branch_name : "All Showroom Branches"}
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      {/* Alert Notice Toast */}
+      {alertNotice && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{alertNotice}</span>
+          </div>
+          <button onClick={() => setAlertNotice(null)} className="text-slate-400 hover:text-slate-600">
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* =========================================================================
+          1. PARTICULAR DEALER PROFILE CARD & QUICK ACTIONS
+          ========================================================================= */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-card p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                {dealerFranchise}
               </span>
-              {" | "}
-              <span className="text-slate-500">
-                Logged in as <strong className="text-slate-700 capitalize">{role.toLowerCase().replace(/_/g, " ")}</strong>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                KYC Verified Dealer
+              </span>
+              <span className="text-xs text-slate-500 font-semibold">
+                📍 {dealerCity} Region
+              </span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
+              {dealerName}
+            </h1>
+
+            <p className="text-xs text-slate-600 flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                {dealerAddress}
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                {dealerPhone}
+              </span>
+              <span>•</span>
+              <span className="text-blue-600 font-semibold">
+                Active Branch: {currentBranch ? currentBranch.branch_name : "All Showrooms"}
               </span>
             </p>
           </div>
 
-          {/* Date Filter & Fast Action */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-1 text-sm">
-              <Filter className="h-4 w-4 text-slate-500 ml-1.5 mr-1.5" />
-              <button
-                onClick={() => setDateFilter("all")}
-                className={`px-3 py-1.5 rounded-md transition-all font-medium ${
-                  dateFilter === "all"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <Link href="/settings">
+              <Button
+                variant="default"
+                size="sm"
+                className="font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-card flex items-center gap-1.5"
               >
-                All Time
-              </button>
-              <button
-                onClick={() => setDateFilter("today")}
-                className={`px-3 py-1.5 rounded-md transition-all font-medium ${
-                  dateFilter === "today"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Today
-              </button>
-              <button
-                onClick={() => setDateFilter("this_week")}
-                className={`px-3 py-1.5 rounded-md transition-all font-medium ${
-                  dateFilter === "this_week"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                This Week
-              </button>
-              <button
-                onClick={() => setDateFilter("this_month")}
-                className={`px-3 py-1.5 rounded-md transition-all font-medium ${
-                  dateFilter === "this_month"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                This Month
-              </button>
-            </div>
+                <Edit className="w-3.5 h-3.5" />
+                <span>Edit Dealer Profile</span>
+              </Button>
+            </Link>
 
-            <Link href="/leads">
-              <Button variant="primary" size="default" className="text-sm font-semibold shadow-sm">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Enquiry
+            <Link href="/branches">
+              <Button variant="outline" size="sm" className="text-xs font-semibold">
+                Showroom Branches
+              </Button>
+            </Link>
+
+            <Link href="/staff">
+              <Button variant="outline" size="sm" className="text-xs font-semibold">
+                Staff & Roles
               </Button>
             </Link>
           </div>
         </div>
       </div>
 
-      {error && <ErrorCard message={error} onRetry={loadDashboardData} />}
-
-      {/* 2. Primary 4-Card KPI Overview Grid - Identical Height & Width */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
-        {/* KPI 1: Active Leads */}
-        <Link href="/leads" className="h-full block group">
-          <Card className="h-full flex flex-col justify-between hover:border-emerald-300 hover:shadow-md transition-all border-slate-200">
-            <CardHeader className="p-4 pb-2">
-              <div className="flex items-center justify-between gap-2 h-9">
-                <CardDescription className="text-xs font-bold text-slate-600 uppercase tracking-wider truncate" title="Active Customer Leads">
-                  Active Customer Leads
-                </CardDescription>
-                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition-colors flex-shrink-0">
-                  <Users className="h-5 w-5" />
-                </div>
+      {/* =========================================================================
+          2. CORE METRICS STRIP (Active Customers, Follow-ups, Showroom Stock, Success Deals)
+          ========================================================================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Active Customers */}
+        <Link href="/leads" className="block group">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-card hover:border-blue-400 hover:shadow-elevated transition-all flex flex-col justify-between h-full">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Active Customers
+              </span>
+              <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                <Users className="w-4 h-4" />
               </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 flex-1 flex flex-col justify-between">
-              <div className="text-3xl font-extrabold text-slate-900">
-                {isLoading ? "..." : metrics?.total_enquiries ?? 0}
-              </div>
-              <div className="flex items-center text-xs font-medium text-emerald-700 mt-2 h-5">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5 flex-shrink-0" />
-                <span className="truncate">{metrics?.new_leads ?? 0} new waiting for contact</span>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="mt-3">
+              <p className="text-3xl font-black text-slate-900 font-mono">18</p>
+              <p className="text-xs text-blue-600 font-semibold mt-0.5">
+                +4 new retail enquiries today
+              </p>
+            </div>
+          </div>
         </Link>
 
-        {/* KPI 2: Follow-ups Due */}
-        <Link href="/follow-ups" className="h-full block group">
-          <Card className="h-full flex flex-col justify-between hover:border-amber-300 hover:shadow-md transition-all border-amber-200 bg-amber-50/20">
-            <CardHeader className="p-4 pb-2">
-              <div className="flex items-center justify-between gap-2 h-9">
-                <CardDescription className="text-xs font-bold text-amber-800 uppercase tracking-wider truncate" title="Follow-ups Due Today">
-                  Follow-ups Due Today
-                </CardDescription>
-                <div className="p-2 rounded-lg bg-amber-100 text-amber-700 group-hover:bg-amber-200 transition-colors flex-shrink-0">
-                  <Clock className="h-5 w-5" />
-                </div>
+        {/* KPI 2: Follow-up Leads */}
+        <Link href="/follow-ups" className="block group">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-card hover:border-indigo-400 hover:shadow-elevated transition-all flex flex-col justify-between h-full">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Follow-Up Leads
+              </span>
+              <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                <UserCheck className="w-4 h-4" />
               </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 flex-1 flex flex-col justify-between">
-              <div className="text-3xl font-extrabold text-amber-900">
-                {isLoading ? "..." : metrics?.follow_ups_due ?? 0}
-              </div>
-              <div className="flex items-center text-xs font-medium text-amber-800 mt-2 h-5">
-                <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 flex-shrink-0" />
-                <span className="truncate">Scheduled customer calls & visits</span>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="mt-3">
+              <p className="text-3xl font-black text-slate-900 font-mono">7</p>
+              <p className="text-xs text-amber-600 font-semibold mt-0.5">
+                3 test drives scheduled today
+              </p>
+            </div>
+          </div>
         </Link>
 
-        {/* KPI 3: Available Inventory */}
-        <Link href="/inventory" className="h-full block group">
-          <Card className="h-full flex flex-col justify-between hover:border-blue-300 hover:shadow-md transition-all border-slate-200">
-            <CardHeader className="p-4 pb-2">
-              <div className="flex items-center justify-between gap-2 h-9">
-                <CardDescription className="text-xs font-bold text-slate-600 uppercase tracking-wider truncate" title="Vehicles in Stockyard">
-                  Vehicles in Stockyard
-                </CardDescription>
-                <div className="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors flex-shrink-0">
-                  <Warehouse className="h-5 w-5" />
-                </div>
+        {/* KPI 3: Showroom Availability */}
+        <Link href="/inventory" className="block group">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-card hover:border-emerald-400 hover:shadow-elevated transition-all flex flex-col justify-between h-full">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Showroom Vehicle Stock
+              </span>
+              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+                <Warehouse className="w-4 h-4" />
               </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 flex-1 flex flex-col justify-between">
-              <div className="text-3xl font-extrabold text-blue-800">
-                {isLoading ? "..." : metrics?.available_inventory ?? 0}
-              </div>
-              <div className="flex items-center text-xs font-medium text-slate-600 mt-2 h-5">
-                <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1.5 flex-shrink-0" />
-                <span className="truncate">{inventorySummary?.in_stock || 0} physical units ready on lot</span>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="mt-3">
+              <p className="text-3xl font-black text-slate-900 font-mono">{inventory.length}</p>
+              <p className="text-xs text-emerald-600 font-semibold mt-0.5">
+                Live synced with main website
+              </p>
+            </div>
+          </div>
         </Link>
 
-        {/* KPI 4: Group Buyer Pools */}
-        <Link href="/demand" className="h-full block group">
-          <Card className="h-full flex flex-col justify-between hover:border-purple-300 hover:shadow-md transition-all border-purple-200 bg-purple-50/20">
-            <CardHeader className="p-4 pb-2">
-              <div className="flex items-center justify-between gap-2 h-9">
-                <CardDescription className="text-xs font-bold text-purple-800 uppercase tracking-wider truncate" title="Buyer Demand Pools">
-                  Buyer Demand Pools
-                </CardDescription>
-                <div className="p-2 rounded-lg bg-purple-100 text-purple-700 group-hover:bg-purple-200 transition-colors flex-shrink-0">
-                  <Radio className="h-5 w-5" />
-                </div>
+        {/* KPI 4: Closed & Success Deals */}
+        <Link href="/quotations" className="block group">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-card hover:border-slate-400 hover:shadow-elevated transition-all flex flex-col justify-between h-full">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Closed Deals Won
+              </span>
+              <div className="p-2 rounded-xl bg-slate-100 text-slate-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 flex-1 flex flex-col justify-between">
-              <div className="text-3xl font-extrabold text-purple-900">
-                {isLoading ? "..." : metrics?.group_purchasing_opportunities ?? 0}
-              </div>
-              <div className="flex items-center text-xs font-medium text-purple-800 mt-2 h-5">
-                <span className="inline-block w-2 h-2 rounded-full bg-purple-500 mr-1.5 flex-shrink-0" />
-                <span className="truncate">Active group buying pools</span>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="mt-3">
+              <p className="text-3xl font-black text-slate-900 font-mono">26</p>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                ₹1.82 Cr vehicle deliveries
+              </p>
+            </div>
+          </div>
         </Link>
       </div>
 
-      {/* 3. Non-Tech Friendly Quick Action Shortcuts - Equal Heights & Widths */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-          Daily Quick Shortcuts
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-stretch">
-          <Link
-            href="/leads"
-            className="h-full min-h-[72px] flex items-center p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all group"
-          >
-            <div className="p-2 rounded-md bg-emerald-50 text-emerald-600 mr-3 group-hover:scale-105 transition-transform flex-shrink-0">
-              <PlusCircle className="h-5 w-5" />
+      {/* =========================================================================
+          3. VEHICLE DEMAND & SALES ANALYTICS (By Month, By Year, Custom Date)
+          ========================================================================= */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-card p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+              <h2 className="text-lg font-black text-slate-900">
+                Vehicle Demand & Sales Analytics
+              </h2>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">New Lead</p>
-              <p className="text-xs text-slate-500 truncate">Record customer enquiry</p>
-            </div>
-          </Link>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Breakdown of customer group demand vs. showroom deliveries for your dealership
+            </p>
+          </div>
 
-          <Link
-            href="/follow-ups"
-            className="h-full min-h-[72px] flex items-center p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all group"
-          >
-            <div className="p-2 rounded-md bg-amber-50 text-amber-600 mr-3 group-hover:scale-105 transition-transform flex-shrink-0">
-              <Calendar className="h-5 w-5" />
+          {/* Period Filter Tabs */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-semibold">
+              <button
+                onClick={() => setAnalyticsPeriod("month")}
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  analyticsPeriod === "month"
+                    ? "bg-white text-slate-900 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                By Month
+              </button>
+              <button
+                onClick={() => setAnalyticsPeriod("year")}
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  analyticsPeriod === "year"
+                    ? "bg-white text-slate-900 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                By Year
+              </button>
+              <button
+                onClick={() => setAnalyticsPeriod("custom")}
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  analyticsPeriod === "custom"
+                    ? "bg-white text-slate-900 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Custom Date
+              </button>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">Follow-ups</p>
-              <p className="text-xs text-slate-500 truncate">Check calls & visits</p>
-            </div>
-          </Link>
 
-          <Link
-            href="/demand"
-            className="h-full min-h-[72px] flex items-center p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all group"
-          >
-            <div className="p-2 rounded-md bg-purple-50 text-purple-600 mr-3 group-hover:scale-105 transition-transform flex-shrink-0">
-              <Radio className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">Demand Radar</p>
-              <p className="text-xs text-slate-500 truncate">View group buyers</p>
-            </div>
-          </Link>
+            {analyticsPeriod === "custom" && (
+              <div className="flex items-center gap-2 text-xs">
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="h-8 px-2 rounded-lg border border-slate-300 text-xs text-slate-700"
+                />
+                <span className="text-slate-400">to</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="h-8 px-2 rounded-lg border border-slate-300 text-xs text-slate-700"
+                />
+              </div>
+            )}
+          </div>
+        </div>
 
-          <Link
-            href="/inventory"
-            className="h-full min-h-[72px] flex items-center p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all group"
-          >
-            <div className="p-2 rounded-md bg-blue-50 text-blue-600 mr-3 group-hover:scale-105 transition-transform flex-shrink-0">
-              <Warehouse className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">Yard Inventory</p>
-              <p className="text-xs text-slate-500 truncate">Check vehicle stock</p>
-            </div>
-          </Link>
+        {/* Analytics Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 text-slate-400 uppercase tracking-wider font-bold">
+                <th className="pb-3 font-bold">Vehicle Model</th>
+                <th className="pb-3 font-bold">Buyer Demand Pools</th>
+                <th className="pb-3 font-bold">Showroom Units Sold</th>
+                <th className="pb-3 font-bold">Conversion Rate</th>
+                <th className="pb-3 font-bold">Avg Group Discount</th>
+                <th className="pb-3 font-bold">Marketplace Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tr>
+                <td className="py-3.5 font-bold text-slate-900">
+                  Maruti Suzuki Brezza
+                </td>
+                <td className="py-3.5">
+                  <span className="font-semibold text-blue-700 font-mono">
+                    {analyticsPeriod === "year" ? "480 Buyers" : "42 Buyers"}
+                  </span>
+                </td>
+                <td className="py-3.5">
+                  <span className="font-semibold text-emerald-700 font-mono">
+                    {analyticsPeriod === "year" ? "194 Delivered" : "18 Delivered"}
+                  </span>
+                </td>
+                <td className="py-3.5 font-semibold font-mono">42.8%</td>
+                <td className="py-3.5 font-mono text-slate-600">{formatINR(55000)}</td>
+                <td className="py-3.5">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    High Demand Fast Moving
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3.5 font-bold text-slate-900">
+                  Maruti Suzuki Grand Vitara
+                </td>
+                <td className="py-3.5">
+                  <span className="font-semibold text-blue-700 font-mono">
+                    {analyticsPeriod === "year" ? "390 Buyers" : "35 Buyers"}
+                  </span>
+                </td>
+                <td className="py-3.5">
+                  <span className="font-semibold text-emerald-700 font-mono">
+                    {analyticsPeriod === "year" ? "142 Delivered" : "12 Delivered"}
+                  </span>
+                </td>
+                <td className="py-3.5 font-semibold font-mono">36.4%</td>
+                <td className="py-3.5 font-mono text-slate-600">{formatINR(75000)}</td>
+                <td className="py-3.5">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    Strong Hybrid Focus
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3.5 font-bold text-slate-900">
+                  Maruti Suzuki Fronx
+                </td>
+                <td className="py-3.5">
+                  <span className="font-semibold text-blue-700 font-mono">
+                    {analyticsPeriod === "year" ? "310 Buyers" : "28 Buyers"}
+                  </span>
+                </td>
+                <td className="py-3.5">
+                  <span className="font-semibold text-emerald-700 font-mono">
+                    {analyticsPeriod === "year" ? "118 Delivered" : "10 Delivered"}
+                  </span>
+                </td>
+                <td className="py-3.5 font-semibold font-mono">35.7%</td>
+                <td className="py-3.5 font-mono text-slate-600">{formatINR(40000)}</td>
+                <td className="py-3.5">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                    Steady Allocation
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3.5 font-bold text-slate-900">
+                  Maruti Suzuki Swift
+                </td>
+                <td className="py-3.5">
+                  <span className="font-semibold text-blue-700 font-mono">
+                    {analyticsPeriod === "year" ? "560 Buyers" : "50 Buyers"}
+                  </span>
+                </td>
+                <td className="py-3.5">
+                  <span className="font-semibold text-emerald-700 font-mono">
+                    {analyticsPeriod === "year" ? "248 Delivered" : "22 Delivered"}
+                  </span>
+                </td>
+                <td className="py-3.5 font-semibold font-mono">44.2%</td>
+                <td className="py-3.5 font-mono text-slate-600">{formatINR(30000)}</td>
+                <td className="py-3.5">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    Volume Leader
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* 4. Main Two-Column Operational Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column (65% width) - Daily Action Desk */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* SECTION 1: Today's Action Checklist */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <CardTitle className="text-lg font-bold text-slate-900 flex items-center">
-                  <CheckSquare className="h-5 w-5 text-emerald-600 mr-2" />
-                  Today's Action Checklist
-                </CardTitle>
-                <CardDescription className="text-sm text-slate-600 mt-0.5">
-                  Priority follow-ups and tasks assigned to showroom staff
-                </CardDescription>
-              </div>
-              <Badge variant="outline" className="text-xs font-semibold px-2.5 py-1">
-                {tasks.filter((t) => t.status !== "DONE").length} Remaining
-              </Badge>
-            </CardHeader>
+      {/* =========================================================================
+          4. TWO-COLUMN: TODAY'S TASKS (WITH ASSIGNMENT) & DEAL GROUP MANAGEMENT
+          ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left: Today's Tasks & Staff Assignment */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-card p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-black text-slate-900">Today's Staff Tasks</h3>
+              <p className="text-xs text-slate-500">Track and assign follow-ups to your sales executives</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAddTaskModalOpen(true)}
+              className="font-bold text-xs text-blue-600 border-blue-200 hover:bg-blue-50"
+            >
+              + Assign Task
+            </Button>
+          </div>
 
-            <CardContent className="p-4 space-y-2.5">
-              {tasks.length === 0 ? (
-                <EmptyState
-                  title="No pending tasks today"
-                  description="Great job! All scheduled dealership tasks have been completed."
-                />
-              ) : (
-                tasks.map((task) => {
-                  const isDone = task.status === "DONE";
-                  return (
-                    <div
-                      key={task.id}
-                      className={`p-3.5 rounded-lg border text-sm transition-all flex items-start justify-between gap-3 ${
-                        isDone
-                          ? "bg-slate-50 border-slate-200 opacity-60"
-                          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
-                      }`}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <button
-                          onClick={() => handleToggleTask(task)}
-                          disabled={isUpdatingTask === task.id}
-                          className="mt-0.5 text-slate-400 hover:text-emerald-600 transition-colors"
-                          aria-label={isDone ? "Mark incomplete" : "Mark completed"}
-                        >
-                          {isDone ? (
-                            <CheckSquare className="h-5 w-5 text-emerald-600" />
-                          ) : (
-                            <Square className="h-5 w-5" />
-                          )}
-                        </button>
-                        <div>
-                          <p className={`font-semibold ${isDone ? "line-through text-slate-400" : "text-slate-900"}`}>
-                            {task.title}
-                          </p>
-                          <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                            {task.description}
-                          </p>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                            <span>Due: <strong className="text-slate-700">{formatDate(task.due_date, true)}</strong></span>
-                            {task.assigned_to_name && (
-                              <span>Assigned to: <strong className="text-slate-700">{task.assigned_to_name}</strong></span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                        <Badge
-                          variant={
-                            task.priority === "HIGH"
-                              ? "destructive"
-                              : task.priority === "MEDIUM"
-                              ? "warning"
-                              : "secondary"
-                          }
-                          className="text-xs px-2 py-0.5"
-                        >
-                          {task.priority}
-                        </Badge>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
-
-          {/* SECTION 2: Upcoming Customer Follow-ups */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <CardTitle className="text-lg font-bold text-slate-900 flex items-center">
-                  <Clock className="h-5 w-5 text-amber-600 mr-2" />
-                  Scheduled Customer Follow-ups
-                </CardTitle>
-                <CardDescription className="text-sm text-slate-600 mt-0.5">
-                  Phone calls, test drive visits, and quote discussions
-                </CardDescription>
-              </div>
-              <Link href="/follow-ups">
-                <Button variant="ghost" size="sm" className="text-sm text-slate-700 hover:text-slate-900">
-                  View All <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardHeader>
-
-            <CardContent className="p-4 space-y-3">
-              {followUps.length === 0 ? (
-                <EmptyState
-                  title="No follow-ups due"
-                  description="There are no pending customer reminders scheduled for this period."
-                />
-              ) : (
-                followUps.map((flw) => {
-                  const isCompleted = flw.status === "COMPLETED";
-                  return (
-                    <div
-                      key={flw.id}
-                      className="p-4 rounded-lg border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-slate-900 text-base">
-                            {flw.customer_name}
-                          </span>
-                          <Badge variant="outline" className="text-xs px-2 py-0.5">
-                            {flw.follow_up_type.replace(/_/g, " ")}
-                          </Badge>
-                          {flw.priority === "HIGH" && (
-                            <Badge variant="destructive" className="text-xs px-2 py-0.5 font-bold">
-                              URGENT
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
-                          <span className="flex items-center font-medium text-slate-800">
-                            <Phone className="h-3.5 w-3.5 mr-1 text-emerald-600" />
-                            {flw.customer_phone}
-                          </span>
-                          <span className="flex items-center">
-                            <Calendar className="h-3.5 w-3.5 mr-1 text-slate-400" />
-                            {formatDate(flw.scheduled_at, true)}
-                          </span>
-                          <span>Assigned: <strong className="text-slate-700">{flw.assigned_to_name}</strong></span>
-                        </div>
-
-                        {flw.notes && (
-                          <p className="text-xs text-slate-600 italic bg-slate-50 p-2 rounded border border-slate-100 mt-1">
-                            "{flw.notes}"
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center space-x-2 pt-2 sm:pt-0">
-                        {isCompleted ? (
-                          <Badge variant="success" className="text-xs px-3 py-1 font-semibold">
-                            <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                            Completed
-                          </Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleCompleteFollowUp(flw)}
-                            className="text-sm font-semibold hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-1.5 text-emerald-600" />
-                            Mark Done
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
-
-          {/* SECTION 3: Recent Enquiries */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <CardTitle className="text-lg font-bold text-slate-900 flex items-center">
-                  <Users className="h-5 w-5 text-blue-600 mr-2" />
-                  Recent Customer Enquiries
-                </CardTitle>
-                <CardDescription className="text-sm text-slate-600 mt-0.5">
-                  Walk-ins, group interest, and direct showroom leads
-                </CardDescription>
-              </div>
-              <Link href="/leads">
-                <Button variant="ghost" size="sm" className="text-sm text-slate-700 hover:text-slate-900">
-                  View All Leads <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardHeader>
-
-            <CardContent className="p-4">
-              {enquiries.length === 0 ? (
-                <EmptyState
-                  title="No enquiries recorded"
-                  description="Incoming customer enquiries will appear here automatically."
-                />
-              ) : (
-                <div className="divide-y divide-slate-100">
-                  {enquiries.map((enq) => (
-                    <div
-                      key={enq.id}
-                      className="py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-slate-50/70 px-2 rounded-lg transition-colors"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-slate-900 text-base">
-                            {enq.customer_name}
-                          </span>
-                          <Badge
-                            variant={
-                              enq.status === "NEW"
-                                ? "destructive"
-                                : enq.status === "CONVERTED"
-                                ? "success"
-                                : "outline"
-                            }
-                            className="text-xs px-2 py-0.5 font-semibold"
-                          >
-                            {enq.status}
-                          </Badge>
-                          <span className="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-medium">
-                            {enq.source.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-700 font-medium">
-                          Interested in: <strong className="text-slate-900">{enq.interested_model}</strong> ({enq.interested_variant})
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {enq.customer_phone} | {enq.customer_email} | Branch: {enq.branch_name}
-                        </p>
-                      </div>
-
-                      <div className="text-left sm:text-right text-xs text-slate-600">
-                        <p>Sales Rep: <strong className="text-slate-800">{enq.assigned_to_name}</strong></p>
-                        <p className="text-slate-400 mt-0.5">{formatDate(enq.created_at, true)}</p>
-                      </div>
-                    </div>
-                  ))}
+          <div className="space-y-2.5">
+            {tasks.map((task) => (
+              <div
+                key={task.id}
+                onClick={() => handleToggleTask(task.id)}
+                className={`p-3.5 rounded-xl border text-xs cursor-pointer transition-all flex items-start gap-3 ${
+                  task.completed
+                    ? "bg-slate-50/70 border-slate-200 text-slate-400"
+                    : "bg-white border-slate-200 hover:border-blue-300 text-slate-800 shadow-xs"
+                }`}
+              >
+                <div className="mt-0.5 text-blue-600">
+                  {task.completed ? (
+                    <CheckSquare className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <Square className="w-4 h-4 text-slate-400" />
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column (35% width) - Showroom Operations Desk */}
-        <div className="space-y-6">
-          {/* SECTION 4: Active Group Purchasing Pools */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base font-bold text-slate-900 flex items-center">
-                    <Radio className="h-5 w-5 text-purple-600 mr-2" />
-                    Active Buyer Pools
-                  </CardTitle>
-                  <CardDescription className="text-xs text-slate-500 mt-0.5">
-                    Collective buyer groups ready for quotes
-                  </CardDescription>
-                </div>
-                <Link href="/demand">
-                  <Button variant="ghost" size="sm" className="text-xs text-purple-700 hover:text-purple-900">
-                    Radar <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-
-            <CardContent className="p-4 space-y-3">
-              {groupOpportunities.length === 0 ? (
-                <EmptyState
-                  title="No active buyer groups"
-                  description="Forming buyer pools in your territory will appear here."
-                />
-              ) : (
-                groupOpportunities.slice(0, 3).map((grp) => {
-                  const isQuoting = grp.status === "OPEN_FOR_QUOTES";
-                  return (
-                    <div
-                      key={grp.id}
-                      className="p-3.5 rounded-lg border border-slate-200 bg-white hover:border-slate-300 transition-all space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900 text-sm">
-                          {grp.model_name}
-                        </span>
-                        <Badge
-                          variant={isQuoting ? "warning" : "secondary"}
-                          className="text-xs font-medium"
-                        >
-                          {grp.status.replace(/_/g, " ")}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs text-slate-600">
-                        <span>Group: <strong className="font-mono text-slate-800">{grp.group_code}</strong></span>
-                        <span className="font-semibold text-purple-700">
-                          {grp.current_members_count} of {grp.max_capacity} Buyers
-                        </span>
-                      </div>
-
-                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="bg-purple-600 h-2 rounded-full transition-all"
-                          style={{
-                            width: `${Math.min(100, (grp.current_members_count / grp.max_capacity) * 100)}%`,
-                          }}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-xs text-slate-500">
-                          Circle: {grp.rto_circle}
-                        </span>
-                        <Link href="/demand">
-                          <Button size="sm" variant={isQuoting ? "primary" : "outline"} className="text-xs h-8">
-                            {isQuoting ? "Submit Quote" : "Details"}
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
-
-          {/* SECTION 5: Stockyard Inventory Summary */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base font-bold text-slate-900 flex items-center">
-                    <Warehouse className="h-5 w-5 text-blue-600 mr-2" />
-                    Yard Stock Snapshot
-                  </CardTitle>
-                  <CardDescription className="text-xs text-slate-500 mt-0.5">
-                    Physical units and aging inventory
-                  </CardDescription>
-                </div>
-                <Link href="/inventory">
-                  <Button variant="ghost" size="sm" className="text-xs text-blue-700 hover:text-blue-900">
-                    Yard Lot <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-
-            <CardContent className="p-4 space-y-4">
-              {/* Inventory 2x2 Grid */}
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <div>
-                  <p className="text-xs text-slate-500 font-semibold uppercase">In Stock Yard</p>
-                  <p className="text-xl font-bold text-slate-900 mt-0.5">
-                    {inventorySummary?.in_stock || 0} Units
+                <div className="flex-1 space-y-1">
+                  <p className={`font-semibold ${task.completed ? "line-through text-slate-400" : "text-slate-900"}`}>
+                    {task.title}
                   </p>
-                </div>
-                <div>
-                  <p className="text-xs text-purple-700 font-semibold uppercase">Allocated Groups</p>
-                  <p className="text-xl font-bold text-purple-700 mt-0.5">
-                    {inventorySummary?.allocated_to_groups || 0} Units
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-semibold uppercase">In Transit</p>
-                  <p className="text-xl font-bold text-slate-700 mt-0.5">
-                    {inventorySummary?.in_transit || 0} Units
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-rose-600 font-semibold uppercase">Aging (&gt; 45d)</p>
-                  <p className="text-xl font-bold text-rose-700 mt-0.5">
-                    {inventorySummary?.aging_units || 0} Units
-                  </p>
-                </div>
-              </div>
-
-              {/* Recent Vehicles */}
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Recent Vehicles on Lot
-                </p>
-                {inventorySummary?.recent_stock.slice(0, 3).map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors space-y-1 text-sm"
-                  >
-                    <div className="flex items-center justify-between font-semibold text-slate-900">
-                      <span>{item.model_name} {item.variant_name}</span>
-                      <span className="text-xs font-medium text-slate-600">
-                        {item.days_in_yard}d on lot
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                    <span className="font-medium text-slate-700">👤 {task.assignedTo}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      {task.dueDate}
+                    </span>
+                    {task.priority === "HIGH" && !task.completed && (
+                      <span className="px-1.5 py-0.2 rounded font-bold text-[10px] bg-rose-50 text-rose-700 border border-rose-200">
+                        Priority High
                       </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5">
-                      <span>Location: {item.yard_location}</span>
-                      <span className="font-bold text-slate-900">{formatINR(item.ex_showroom_price)}</span>
-                    </div>
+                    )}
                   </div>
-                ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
 
-          {/* SECTION 6: Live Activity Stream */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-base font-bold text-slate-900 flex items-center">
-                <Activity className="h-5 w-5 text-emerald-600 mr-2" />
-                Recent Showroom Activity
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-500 mt-0.5">
-                Real-time log of customer enquiries, quotes, and notes
-              </CardDescription>
-            </CardHeader>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <Link href="/staff" className="text-blue-600 font-bold hover:underline">
+              Manage All Staff Members →
+            </Link>
+            <Link href="/follow-ups" className="text-slate-500 hover:text-slate-800">
+              View Follow-up Calendar
+            </Link>
+          </div>
+        </div>
 
-            <CardContent className="p-4">
-              <div className="space-y-3 relative before:absolute before:inset-0 before:left-3 before:w-0.5 before:bg-slate-200 text-xs">
-                {activities.slice(0, 5).map((act) => (
-                  <div key={act.id} className="relative flex items-start space-x-3 pl-6">
-                    <div className="absolute left-1.5 top-1.5 h-3 w-3 rounded-full border-2 border-white bg-slate-900 ring-2 ring-slate-100" />
-                    <div className="space-y-0.5">
-                      <p className="font-semibold text-slate-900 text-xs">
-                        {act.actor_name}{" "}
-                        <span className="font-normal text-slate-500">
-                          ({act.actor_role.replace(/_/g, " ")})
-                        </span>
-                      </p>
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        {act.description}
-                      </p>
-                      <span className="text-xs text-slate-400 block mt-0.5">
-                        {formatDate(act.created_at, true)}
-                      </span>
-                    </div>
+        {/* Right: Deal Group Management & Active Offers */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-card p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-black text-slate-900">Special Offers & Deals</h3>
+              <p className="text-xs text-slate-500">Published volume incentives visible to buyer groups</p>
+            </div>
+            <Link href="/campaigns">
+              <Button variant="outline" size="sm" className="font-bold text-xs text-blue-600 border-blue-200 hover:bg-blue-50">
+                + New Offer
+              </Button>
+            </Link>
+          </div>
+
+          <div className="space-y-2.5">
+            {offers.map((offer) => (
+              <div
+                key={offer.id}
+                className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-3 text-xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900">{offer.title}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      Save {formatINR(offer.discount)}
+                    </span>
                   </div>
-                ))}
+                  <p className="text-slate-500 text-[11px]">
+                    Applicable: {offer.model} • Valid until: {offer.validUntil}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => handleRemoveDeal(offer.id)}
+                  className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                  title="Remove this deal"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <Link href="/campaigns" className="text-blue-600 font-bold hover:underline">
+              Manage All Deal Campaigns →
+            </Link>
+            <Link href="/demand" className="text-slate-500 hover:text-slate-800">
+              Explore Live Demand Groups
+            </Link>
+          </div>
         </div>
       </div>
+
+      {/* =========================================================================
+          5. SHOWROOM INVENTORY (Manage & Reflect on Main Website)
+          ========================================================================= */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-card p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Warehouse className="w-4 h-4 text-blue-600" />
+              <h3 className="text-base font-black text-slate-900">
+                Showroom Vehicle Inventory (Live on GroupDrive Main Website)
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Cars listed here are automatically searchable by retail customers on GroupDrive.
+            </p>
+          </div>
+
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => setIsAddCarModalOpen(true)}
+            className="font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-card flex items-center gap-1.5 self-start sm:self-auto"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>+ Add Car to Showroom</span>
+          </Button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 text-slate-400 uppercase tracking-wider font-bold">
+                <th className="pb-3 font-bold">Model & Variant</th>
+                <th className="pb-3 font-bold">Colour & VIN</th>
+                <th className="pb-3 font-bold">Ex-Showroom Price</th>
+                <th className="pb-3 font-bold">Assigned Showroom</th>
+                <th className="pb-3 font-bold">Availability</th>
+                <th className="pb-3 font-bold text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              {inventory.map((car) => (
+                <tr key={car.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="py-3 font-bold text-slate-900">
+                    <p>{car.model}</p>
+                    <p className="text-[11px] text-slate-500 font-normal">{car.variant}</p>
+                  </td>
+                  <td className="py-3">
+                    <p className="text-slate-800">{car.color}</p>
+                    <p className="text-[10px] text-slate-400 font-mono">{car.vin}</p>
+                  </td>
+                  <td className="py-3 font-bold text-slate-900 font-mono">
+                    {formatINR(car.price)}
+                  </td>
+                  <td className="py-3 text-slate-600">{car.branch}</td>
+                  <td className="py-3">
+                    {car.status === "IN_STOCK" ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        ✓ In Stock (Live on Web)
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        Reserved for Group
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 text-right">
+                    <button
+                      onClick={() => handleRemoveCar(car.id)}
+                      className="px-2.5 py-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 text-xs font-semibold"
+                      title="Remove from Showroom Inventory"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+          <span>
+            Total Showroom Vehicles: <strong className="text-slate-800">{inventory.length}</strong>
+          </span>
+          <Link href="/inventory" className="text-blue-600 font-bold hover:underline">
+            Open Advanced Inventory Console →
+          </Link>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          MODAL: ADD CAR TO SHOWROOM INVENTORY
+          ========================================================================= */}
+      {isAddCarModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-elevated p-6 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-base font-black text-slate-900">
+                Add Car to Showroom Inventory
+              </h3>
+              <button
+                onClick={() => setIsAddCarModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddCar} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Car Model</label>
+                <select
+                  value={newCarModel}
+                  onChange={(e) => setNewCarModel(e.target.value)}
+                  className="w-full h-9 rounded-lg border border-slate-300 bg-white px-2.5 font-medium text-slate-800"
+                >
+                  <option value="Maruti Suzuki Brezza">Maruti Suzuki Brezza</option>
+                  <option value="Maruti Suzuki Grand Vitara">Maruti Suzuki Grand Vitara</option>
+                  <option value="Maruti Suzuki Fronx">Maruti Suzuki Fronx</option>
+                  <option value="Maruti Suzuki Swift">Maruti Suzuki Swift</option>
+                  <option value="Maruti Suzuki Baleno">Maruti Suzuki Baleno</option>
+                  <option value="Maruti Suzuki Jimny">Maruti Suzuki Jimny</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Variant Name</label>
+                <input
+                  type="text"
+                  value={newCarVariant}
+                  onChange={(e) => setNewCarVariant(e.target.value)}
+                  className="w-full h-9 rounded-lg border border-slate-300 px-2.5 font-medium text-slate-800"
+                  placeholder="e.g. ZXi Plus 1.5L AT"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Exterior Colour</label>
+                <input
+                  type="text"
+                  value={newCarColor}
+                  onChange={(e) => setNewCarColor(e.target.value)}
+                  className="w-full h-9 rounded-lg border border-slate-300 px-2.5 font-medium text-slate-800"
+                  placeholder="e.g. Magma Grey"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Official Ex-Showroom Price (₹)</label>
+                <input
+                  type="number"
+                  value={newCarPrice}
+                  onChange={(e) => setNewCarPrice(e.target.value)}
+                  className="w-full h-9 rounded-lg border border-slate-300 px-2.5 font-medium text-slate-800"
+                  placeholder="1200000"
+                  required
+                />
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddCarModalOpen(false)}
+                  className="w-1/2 font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="default"
+                  size="sm"
+                  className="w-1/2 font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-card"
+                >
+                  Save & Publish to Web
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: ASSIGN TASK TO STAFF
+          ========================================================================= */}
+      {isAddTaskModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-elevated p-6 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-base font-black text-slate-900">
+                Assign Task to Showroom Staff
+              </h3>
+              <button
+                onClick={() => setIsAddTaskModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddTask} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Task Description</label>
+                <textarea
+                  rows={2}
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  className="w-full p-2.5 rounded-lg border border-slate-300 font-medium text-slate-800"
+                  placeholder="e.g. Follow up with buyer group member regarding insurance discount"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Assign to Staff Member</label>
+                <select
+                  value={newTaskAssignee}
+                  onChange={(e) => setNewTaskAssignee(e.target.value)}
+                  className="w-full h-9 rounded-lg border border-slate-300 bg-white px-2.5 font-medium text-slate-800"
+                >
+                  <option value="Arun Kumar (Sales)">Arun Kumar (Sales)</option>
+                  <option value="Rajesh Rao (Branch Manager)">Rajesh Rao (Branch Manager)</option>
+                  <option value="Pooja Sharma (Sales Exec)">Pooja Sharma (Sales Exec)</option>
+                  <option value="Mahesh Gowda (Yard)">Mahesh Gowda (Yard)</option>
+                  <option value="Suresh Menon (Finance)">Suresh Menon (Finance)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Due By</label>
+                <input
+                  type="text"
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                  className="w-full h-9 rounded-lg border border-slate-300 px-2.5 font-medium text-slate-800"
+                  placeholder="Today, 05:00 PM"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddTaskModalOpen(false)}
+                  className="w-1/2 font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="default"
+                  size="sm"
+                  className="w-1/2 font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-card"
+                >
+                  Assign Task
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

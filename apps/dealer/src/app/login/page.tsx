@@ -111,26 +111,34 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl">
-        <div className="flex justify-center">
-          <div className="h-12 w-12 rounded-xl bg-rose-600 flex items-center justify-center text-white shadow-lg">
-            <Car className="h-7 w-7" />
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center">
+        {/* Main Website Theme Logo */}
+        <div className="flex items-center justify-center gap-2.5">
+          <div className="h-11 w-11 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl shadow-sm">
+            GD
           </div>
+          <span className="text-3xl font-black tracking-tight text-slate-950">
+            GROUP<span className="text-blue-600">DRIVE</span>
+          </span>
         </div>
-        <h2 className="mt-3 text-center text-2xl font-bold tracking-tight text-white">
-          GROUPDRIVE DealerOS
-        </h2>
-        <p className="mt-1 text-center text-xs text-slate-400">
-          Enterprise Dealership Management and Demand Intelligence Platform
+
+        <div className="mt-2.5">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+            <Building className="w-3.5 h-3.5 text-blue-600" />
+            DealerOS Enterprise Portal
+          </span>
+        </div>
+        <p className="mt-2 text-center text-xs text-slate-500">
+          Authorized Dealership Management and Demand Intelligence Platform
         </p>
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-xl space-y-4">
         {/* Session Expired Banner */}
         {isExpired && (
-          <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 text-xs text-amber-300 flex items-center space-x-2.5">
-            <AlertCircle className="h-4 w-4 text-amber-400 flex-shrink-0" />
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 flex items-center space-x-2.5">
+            <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
             <span>
               Your session has expired for security reasons. Please enter your password to resume.
             </span>
@@ -138,9 +146,9 @@ function LoginForm() {
         )}
 
         {/* Login Card */}
-        <div className="bg-white py-6 px-4 shadow-2xl rounded-xl sm:px-8 border border-slate-200">
+        <div className="bg-white py-8 px-6 shadow-card rounded-2xl sm:px-10 border border-slate-200/90">
           {loginError && (
-            <div className="mb-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-800 flex items-start space-x-2.5">
+            <div className="mb-4 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-800 flex items-start space-x-2.5">
               <AlertCircle className="h-4 w-4 text-rose-600 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-semibold">Authentication Failed</p>
@@ -214,22 +222,22 @@ function LoginForm() {
               <Button
                 type="submit"
                 variant="primary"
-                className="w-full text-xs font-semibold py-2.5"
+                className="w-full text-sm font-bold py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-card"
                 isLoading={isLoading}
               >
-                Sign In to Dealership Workspace
+                Sign In to Dealership Workspace →
               </Button>
             </div>
           </form>
 
           {/* Demo Account Quick Switcher */}
           <div className="mt-6 pt-5 border-t border-slate-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center">
-                <UserCheck className="h-3.5 w-3.5 mr-1 text-rose-600" />
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center">
+                <UserCheck className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
                 Select Demo Role Account
               </span>
-              <span className="text-xs text-slate-400">
+              <span className="text-[11px] text-slate-400">
                 Click to load credentials
               </span>
             </div>
@@ -242,9 +250,9 @@ function LoginForm() {
                     key={p.email}
                     type="button"
                     onClick={() => selectPreset(p.email)}
-                    className={`text-left p-2 rounded-lg border text-xs transition-all ${
+                    className={`text-left p-2.5 rounded-xl border text-xs transition-all ${
                       isSelected
-                        ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900"
+                        ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20"
                         : "border-slate-200 bg-white hover:bg-slate-50"
                     }`}
                   >
