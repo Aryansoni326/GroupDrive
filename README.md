@@ -80,9 +80,8 @@ The complete engineering, product, architectural, and operational documentation 
 | [**07. Development_Roadmap.md**](./docs/Development_Roadmap.md) | **Product Development Roadmap** | 13 sequential implementation phases (Foundation -> DealerOS -> Admin -> Web -> Groups -> AI -> Launch) with dependencies and exit gates. |
 | [**08. Testing_Strategy.md**](./docs/Testing_Strategy.md) | **Quality Assurance & Testing** | Unit, API integration, multi-tenant isolation, Playwright E2E flows, load testing benchmarks (k6), and Definition of Done. |
 | [**09. Deployment.md**](./docs/Deployment.md) | **Infrastructure & Deployment** | Cost-conscious deployment strategy ($120/mo), Docker configurations, CI/CD GitHub Actions, environment variables, and zero-downtime migrations. |
-| [**10. Antigravity_Prompts_Library.md**](./docs/Antigravity_Prompts_Library.md) | **Master Prompts Library** | Structured, copy-paste prompts organized in exact development order (Groups A to J) for step-by-step Antigravity code generation. |
-| [**11. Requirements_Traceability_Matrix.md**](./docs/Requirements_Traceability_Matrix.md) | **Requirements Traceability Matrix** | Bidirectional mapping from source requirements to PRD, Architecture, Database, APIs, Apps, Phases, and Acceptance Criteria. |
-| [**12. Open_Decisions.md**](./docs/Open_Decisions.md) | **Open Technical & Business Decisions** | Unresolved decisions, trade-offs, and items requiring founder review (Earnest deposits, RTO API integration, dealer default penalties). |
+| [**10. Requirements_Traceability_Matrix.md**](./docs/Requirements_Traceability_Matrix.md) | **Requirements Traceability Matrix** | Bidirectional mapping from source requirements to PRD, Architecture, Database, APIs, Apps, Phases, and Acceptance Criteria. |
+| [**11. Open_Decisions.md**](./docs/Open_Decisions.md) | **Open Technical & Business Decisions** | Unresolved decisions, trade-offs, and items requiring founder review (Earnest deposits, RTO API integration, dealer default penalties). |
 
 ---
 
@@ -106,5 +105,4 @@ GroupDrive follows a strict dependency-aware engineering sequence:
 [Phase 5: DealerOS MVP] ──► [Phase 6: Admin Panel MVP] ──► [Phase 7: Main Website MVP]
 ```
 
-To begin development, consult the [Antigravity Prompts Library](./docs/Antigravity_Prompts_Library.md) starting with **`PROMPT-A01: Turborepo Monorepo Scaffolding`**.
 
