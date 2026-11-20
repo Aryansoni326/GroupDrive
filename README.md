@@ -1,4 +1,4 @@
-# GROUPDRIVE — Automotive Technology Ecosystem
+# GROUPDRIVE - Automotive Technology Ecosystem
 
 > **Discover. Compare. Group. Negotiate. Drive.**
 
