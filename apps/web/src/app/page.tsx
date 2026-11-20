@@ -4,6 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useCustomerAuth } from "@/lib/auth-context";
+import CustomerDashboardPage from "./dashboard/page";
 
 // Authentic OEM Car Brand Definitions
 interface BrandItem {
@@ -214,8 +216,14 @@ const MARQUEE_ITEMS = [
 ];
 
 export default function HomePage() {
+  const { isAuthenticated, isLoading } = useCustomerAuth();
+
+  if (!isLoading && isAuthenticated) {
+    return <CustomerDashboardPage />;
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="bg-slate-50 text-slate-900 pb-8">
       {/* =========================================================================
           1. HERO SECTION (Light, Premium Automotive Theme with Product Tagline)
           ========================================================================= */}

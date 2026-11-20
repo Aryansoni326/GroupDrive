@@ -153,14 +153,9 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Single "Grab Your Deal" Button (or Dashboard when logged in) */}
+          {/* User Profile Pill when logged in */}
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
-              <Link href="/dashboard">
-                <Button variant="outline" size="sm" className="hidden sm:inline-flex text-xs font-bold">
-                  Dashboard
-                </Button>
-              </Link>
               <Link href="/dashboard?tab=settings" className="flex items-center gap-2 pl-1 hover:opacity-85 transition-opacity">
                 <div className="h-9 w-9 rounded-xl bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center border border-blue-200">
                   {user.first_name?.[0] || "U"}

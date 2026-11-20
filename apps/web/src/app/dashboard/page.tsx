@@ -532,140 +532,154 @@ export default function CustomerDashboardPage() {
   const unreadNotifsCount = notifications.filter((n) => !n.is_read).length;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-28">
-      {/* Top Banner & Customer Welcome */}
-      <div className="bg-slate-950 text-white border-b border-slate-900 py-10">
-        <div className="container mx-auto px-4 sm:px-6">
+    <div className="gd-dash-wrapper">
+      {/* Top Banner & Customer Welcome (Luxury Automotive Executive Styling) */}
+      <section className="gd-dash-hero">
+        <div className="gd-dash-container">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="brand" size="sm">
-                  Personal Account
-                </Badge>
+                <span className="gd-dash-badge-brand">
+                  ★ Personal Buyer Account
+                </span>
                 {user?.is_email_verified ? (
-                  <Badge variant="success" size="sm">
+                  <span className="gd-dash-badge-verified">
                     ✓ Verified Email
-                  </Badge>
+                  </span>
                 ) : (
                   <button
                     onClick={() => handleStartVerification("EMAIL")}
-                    className="text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded-md hover:bg-amber-900"
+                    className="gd-dash-badge-warning"
                   >
                     ⚠ Verify Email Now
                   </button>
                 )}
                 {user?.is_phone_verified ? (
-                  <Badge variant="success" size="sm">
+                  <span className="gd-dash-badge-verified">
                     ✓ Verified Phone
-                  </Badge>
+                  </span>
                 ) : (
                   <button
                     onClick={() => handleStartVerification("PHONE")}
-                    className="text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded-md hover:bg-amber-900"
+                    className="gd-dash-badge-warning"
                   >
                     ⚠ Verify Phone Now
                   </button>
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-black text-white">
+              <h1 className="gd-dash-title">
                 Welcome, {user?.first_name} {user?.last_name}
               </h1>
-              <p className="text-xs text-slate-400 flex flex-wrap items-center gap-2">
-                <span>{user?.city || "Bengaluru"}</span>
+              <p className="gd-dash-subtitle">
+                <span>📍 {user?.city || "Bengaluru"}</span>
                 <span>•</span>
-                <span>{user?.email}</span>
+                <span>✉ {user?.email}</span>
                 <span>•</span>
-                <span>{user?.phone_number}</span>
+                <span>📞 {user?.phone_number}</span>
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs text-slate-300 border-slate-700 hover:bg-slate-800"
+            <div className="flex items-center gap-3">
+              <button
+                className="gd-dash-btn-outline"
                 onClick={() => setIsBookModalOpen(true)}
               >
                 + Book Showroom Visit
-              </Button>
-              <Link href="/cars">
-                <Button variant="default" size="sm" className="font-bold text-xs">
-                  Explore Catalogue
-                </Button>
+              </button>
+              <Link href="/cars" className="gd-dash-btn-primary">
+                Explore Catalogue →
               </Link>
             </div>
           </div>
 
           {/* Quick Metrics Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-8 pt-6 border-t border-slate-800/80 text-xs">
+          <div className="gd-dash-metrics-grid">
             <div
               onClick={() => setActiveTab("quotations")}
-              className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-all"
+              className="gd-dash-metric-card"
             >
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Quotations</span>
-              <span className="text-xl font-black text-white font-mono mt-0.5 block">
+              <div className="gd-dash-metric-label">
+                <span>Quotations</span>
+                <span className="gd-dash-metric-dot text-blue-400" />
+              </div>
+              <div className="gd-dash-metric-value text-blue-400">
                 {quotations.length}
-              </span>
+              </div>
             </div>
 
             <div
               onClick={() => setActiveTab("enquiries")}
-              className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-all"
+              className="gd-dash-metric-card"
             >
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Enquiries</span>
-              <span className="text-xl font-black text-white font-mono mt-0.5 block">
+              <div className="gd-dash-metric-label">
+                <span>Enquiries</span>
+                <span className="gd-dash-metric-dot text-indigo-400" />
+              </div>
+              <div className="gd-dash-metric-value text-indigo-400">
                 {enquiries.length}
-              </span>
+              </div>
             </div>
 
             <div
               onClick={() => setActiveTab("groups")}
-              className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-all"
+              className="gd-dash-metric-card"
             >
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Buyer Groups</span>
-              <span className="text-xl font-black text-white font-mono mt-0.5 block">
+              <div className="gd-dash-metric-label">
+                <span>Buyer Groups</span>
+                <span className="gd-dash-metric-dot text-emerald-400" />
+              </div>
+              <div className="gd-dash-metric-value text-emerald-400">
                 {joinedGroups.length}
-              </span>
+              </div>
             </div>
 
             <div
               onClick={() => setActiveTab("saved")}
-              className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-all"
+              className="gd-dash-metric-card"
             >
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Saved Cars</span>
-              <span className="text-xl font-black text-white font-mono mt-0.5 block">
+              <div className="gd-dash-metric-label">
+                <span>Saved Cars</span>
+                <span className="gd-dash-metric-dot text-amber-400" />
+              </div>
+              <div className="gd-dash-metric-value text-amber-400">
                 {savedVehicles.length}
-              </span>
+              </div>
             </div>
 
             <div
               onClick={() => setActiveTab("appointments")}
-              className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-all"
+              className="gd-dash-metric-card"
             >
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Appointments</span>
-              <span className="text-xl font-black text-white font-mono mt-0.5 block">
+              <div className="gd-dash-metric-label">
+                <span>Appointments</span>
+                <span className="gd-dash-metric-dot text-cyan-400" />
+              </div>
+              <div className="gd-dash-metric-value text-cyan-400">
                 {appointments.filter((a) => a.status === "CONFIRMED").length}
-              </span>
+              </div>
             </div>
 
             <div
               onClick={() => setActiveTab("overview")}
-              className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-all"
+              className="gd-dash-metric-card"
             >
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Alerts</span>
-              <span className="text-xl font-black text-blue-400 font-mono mt-0.5 block">
+              <div className="gd-dash-metric-label">
+                <span>Active Alerts</span>
+                <span className="gd-dash-metric-dot text-rose-400" />
+              </div>
+              <div className="gd-dash-metric-value text-rose-400">
                 {unreadNotifsCount}
-              </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Main Tabbed Container */}
-      <div className="container mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="gd-dash-content-area">
         {/* Navigation Tabs Pill Bar */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-card p-2 flex flex-wrap gap-1.5 text-xs font-semibold">
+        <div className="gd-dash-tabs-nav">
           {[
             { id: "overview", label: "Overview" },
             { id: "quotations", label: `Quotations (${quotations.length})` },
@@ -679,10 +693,8 @@ export default function CustomerDashboardPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as DashboardTab)}
-              className={`px-3.5 py-2 rounded-xl transition-all ${
-                activeTab === tab.id
-                  ? "bg-slate-900 text-white font-bold shadow-xs"
-                  : "text-slate-600 hover:bg-slate-100"
+              className={`gd-dash-tab-btn ${
+                activeTab === tab.id ? "gd-dash-tab-btn-active" : ""
               }`}
             >
               {tab.label}
@@ -744,7 +756,7 @@ export default function CustomerDashboardPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               {/* Left Column: Recent Activity & Open Enquiries */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Recent Dealership Quotations Highlight */}
@@ -928,7 +940,7 @@ export default function CustomerDashboardPage() {
                   {notifications.length === 0 ? (
                     <p className="text-xs text-slate-400 text-center py-4">No notifications.</p>
                   ) : (
-                    <div className="space-y-2.5">
+                    <div className="space-y-2.5 max-h-[280px] overflow-y-auto pr-1">
                       {notifications.slice(0, 4).map((n) => (
                         <div
                           key={n.id}
