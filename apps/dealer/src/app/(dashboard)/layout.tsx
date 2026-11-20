@@ -56,7 +56,7 @@ export default function DashboardLayout({
       <div
         className={cn(
           "flex-1 flex flex-col transition-all duration-200 ease-in-out",
-          isCollapsed ? "lg:pl-16" : "lg:pl-60"
+          isCollapsed ? "lg:pl-16" : "lg:pl-64"
         )}
       >
         <Header onToggleSidebar={() => setIsMobileOpen(true)} />
